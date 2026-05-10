@@ -1,0 +1,112 @@
+name: Scrape Harris County Motivated Seller Leads
+
+on:
+  schedule:
+    # Runs daily at 7:00 AM UTC (2:00 AM Central)
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: "Number of days to look back"
+        required: false
+        default: "7"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    env:
+      DAYS_BACK: ${{ github.event.inputs.days_back || '7' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: scraper/requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml dbfread playwright
+
+      - name: Install Playwright browsers
+        run: |
+          python -m playwright install --with-deps chromium
+
+      - name: Create output directories
+        run: |
+          mkdir -p dashboard data
+
+      - name: Run scraper
+        run: |
+          python scraper/fetch.py
+        env:
+          DAYS_BACK: ${{ env.DAYS_BACK }}
+
+      - name: Show scrape summary
+        run: |
+          echo "=== Scrape Results ==="
+          if [ -f dashboard/records.json ]; then
+            python3 -c "
+          import json
+          with open('dashboard/records.json') as f:
+              d = json.load(f)
+          print(f\"Total records:      {d['total']}\")
+          print(f\"With address:       {d['with_address']}\")
+          print(f\"Fetched at:         {d['fetched_at']}\")
+          hot = sum(1 for r in d['records'] if r.get('score',0) >= 70)
+          warm = sum(1 for r in d['records'] if 50 <= r.get('score',0) < 70)
+          print(f\"Hot leads (≥70):    {hot}\")
+          print(f\"Warm leads (50-69): {warm}\")
+            "
+          else
+            echo "No records.json found"
+          fi
+
+      - name: Commit and push updated records
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/records.json data/records.json data/ dashboard/
+          git diff --cached --quiet || git commit -m "chore: update records $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-pages:
+    needs: scrape
+    runs-on: ubuntu-22.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main  # pull freshly committed records
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload dashboard to Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
