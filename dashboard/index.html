@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Harris County | Motivated Seller Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  /* ── TOKENS ─────────────────────────────────────────────── */
+  :root {
+    --black:   #0a0b0d;
+    --black2:  #111318;
+    --black3:  #181c22;
+    --black4:  #1e232b;
+    --gold:    #d4a017;
+    --gold2:   #f5c842;
+    --gold3:   #ffe066;
+    --blue:    #1a6cff;
+    --blue2:   #3d8bff;
+    --blue3:   #6aaeff;
+    --white:   #f0f2f5;
+    --grey:    #7a8394;
+    --grey2:   #b0b8c8;
+    --red:     #e03a3a;
+    --green:   #21a06b;
+
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body:    'IBM Plex Sans', sans-serif;
+    --font-mono:    'IBM Plex Mono', monospace;
+
+    --cat-lp:      #e03a3a;
+    --cat-fc:      #ff6b35;
+    --cat-tax:     #d4a017;
+    --cat-jud:     #9b59b6;
+    --cat-lien:    #1a6cff;
+    --cat-probate: #21a06b;
+    --cat-notice:  #7a8394;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ──────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 11, 13, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(212, 160, 23, 0.2);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--gold);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    color: var(--black);
+    font-size: 14px;
+  }
+
+  .logo-text {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 0.08em;
+    color: var(--white);
+  }
+
+  .logo-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .last-updated {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--grey);
+  }
+
+  .btn-export {
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 7px 16px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn-export:hover { background: var(--gold2); transform: translateY(-1px); }
+  .btn-export:active { transform: translateY(0); }
+
+  /* ── HERO STATS BAR ─────────────────────────────────────── */
+  .stats-bar {
+    background: var(--black2);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 16px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0;
+  }
+
+  .stat-block {
+    padding: 8px 20px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+  }
+  .stat-block:last-child { border-right: none; }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 32px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--gold2);
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--grey);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  /* ── MAIN LAYOUT ─────────────────────────────────────────── */
+  .main {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── FILTER BAR ─────────────────────────────────────────── */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--grey);
+    width: 14px;
+    height: 14px;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--black3);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--white);
+    padding: 9px 12px 9px 36px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border 0.15s;
+  }
+
+  .search-input:focus { border-color: var(--gold); }
+  .search-input::placeholder { color: var(--grey); }
+
+  .filter-btn {
+    background: var(--black3);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--grey2);
+    padding: 9px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .filter-btn.active {
+    background: var(--gold);
+    color: var(--black);
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+
+  .sort-select {
+    background: var(--black3);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--grey2);
+    padding: 9px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .sort-select:focus { border-color: var(--gold); }
+
+  /* ── LEAD COUNT ─────────────────────────────────────────── */
+  .lead-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--grey);
+    margin-bottom: 12px;
+  }
+
+  .lead-count span {
+    color: var(--gold2);
+    font-weight: 600;
+  }
+
+  /* ── TABLE ───────────────────────────────────────────────── */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead {
+    background: var(--black4);
+    position: sticky;
+    top: 56px;
+    z-index: 10;
+  }
+
+  th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--grey);
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(212,160,23,0.2);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+  }
+
+  th:hover { color: var(--gold); }
+  th.sort-asc::after  { content: ' ↑'; color: var(--gold); }
+  th.sort-desc::after { content: ' ↓'; color: var(--gold); }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.1s;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody tr:hover { background: rgba(212,160,23,0.04); }
+
+  td {
+    padding: 10px 14px;
+    vertical-align: middle;
+    color: var(--grey2);
+  }
+
+  td.mono { font-family: var(--font-mono); font-size: 12px; }
+  td.owner { color: var(--white); font-weight: 500; max-width: 200px; }
+  td.owner > div:first-child { 
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
+    max-width: 195px;
+  }
+  td.col-addr { max-width: 160px; }
+  td.col-addr .addr-main { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td.col-flags { max-width: 160px; }
+  td.col-legal { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── SCORE BADGE ────────────────────────────────────────── */
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 24px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    border-radius: 2px;
+  }
+
+  .score-hot  { background: rgba(224,58,58,0.15); color: var(--red);   border: 1px solid rgba(224,58,58,0.3); }
+  .score-warm { background: rgba(212,160,23,0.15); color: var(--gold2); border: 1px solid rgba(212,160,23,0.3); }
+  .score-cool { background: rgba(26,108,255,0.12); color: var(--blue2); border: 1px solid rgba(26,108,255,0.25); }
+  .score-low  { background: rgba(122,131,148,0.1); color: var(--grey);  border: 1px solid rgba(122,131,148,0.2); }
+
+  /* ── CAT PILL ────────────────────────────────────────────── */
+  .cat-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    border-radius: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .cat-lp      { background: rgba(224,58,58,0.12);  color: var(--cat-lp);      border: 1px solid rgba(224,58,58,0.25); }
+  .cat-fc      { background: rgba(255,107,53,0.12); color: var(--cat-fc);      border: 1px solid rgba(255,107,53,0.25); }
+  .cat-tax     { background: rgba(212,160,23,0.12); color: var(--cat-tax);     border: 1px solid rgba(212,160,23,0.25); }
+  .cat-jud     { background: rgba(155,89,182,0.12); color: var(--cat-jud);     border: 1px solid rgba(155,89,182,0.25); }
+  .cat-lien    { background: rgba(26,108,255,0.12); color: var(--cat-lien);    border: 1px solid rgba(26,108,255,0.25); }
+  .cat-probate { background: rgba(33,160,107,0.12); color: var(--cat-probate); border: 1px solid rgba(33,160,107,0.25); }
+  .cat-notice  { background: rgba(122,131,148,0.1); color: var(--cat-notice);  border: 1px solid rgba(122,131,148,0.2); }
+
+  /* ── FLAGS ───────────────────────────────────────────────── */
+  .flags-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+  .flag-chip {
+    display: inline-block;
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.05);
+    color: var(--grey2);
+    white-space: nowrap;
+  }
+
+  /* ── ADDRESS CELL ─────────────────────────────────────────── */
+  .addr-block { line-height: 1.4; }
+  .addr-main  { color: var(--white); }
+  .addr-sub   { font-size: 11px; color: var(--grey); font-family: var(--font-mono); }
+
+  /* ── AMOUNT ──────────────────────────────────────────────── */
+  .amount-cell { font-family: var(--font-mono); color: var(--gold2); }
+
+  /* ── LINK ────────────────────────────────────────────────── */
+  .doc-link {
+    color: var(--blue2);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    transition: color 0.15s;
+  }
+
+  .doc-link:hover { color: var(--blue3); text-decoration: underline; }
+
+  /* ── EMPTY STATE ─────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--grey);
+  }
+
+  .empty-state h3 {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--black4);
+    margin-bottom: 8px;
+  }
+
+  /* ── PAGINATION ─────────────────────────────────────────── */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .page-btn {
+    background: var(--black3);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--grey2);
+    width: 32px;
+    height: 32px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .page-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .page-btn.active { background: var(--gold); color: var(--black); border-color: var(--gold); font-weight: 700; }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .page-info { font-family: var(--font-mono); font-size: 11px; color: var(--grey); padding: 0 8px; }
+
+  /* ── CATEGORY BREAKDOWN BAR ─────────────────────────────── */
+  .breakdown {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: var(--black2);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .breakdown-item:hover { opacity: 0.8; }
+
+  .breakdown-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 1px;
+  }
+
+  .breakdown-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--grey2);
+  }
+
+  .breakdown-count {
+    font-family: var(--font-display);
+    font-size: 15px;
+    color: var(--white);
+    margin-left: 2px;
+  }
+
+  /* ── FOOTER ─────────────────────────────────────────────── */
+  footer {
+    margin-top: 40px;
+    padding: 20px 24px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .footer-left {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--grey);
+  }
+
+  .footer-right {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--grey);
+    text-align: right;
+  }
+
+  .footer-brand {
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── GOLD ACCENT LINE ────────────────────────────────────── */
+  .gold-line {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 20px 0;
+    opacity: 0.3;
+  }
+
+  /* ── MOBILE ─────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .filter-bar { flex-direction: column; align-items: stretch; }
+    .search-wrap { min-width: unset; }
+    header { padding: 0 14px; }
+    .main  { padding: 14px; }
+    .logo-sub { display: none; }
+  }
+
+  /* ── MODAL ───────────────────────────────────────────────── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--black2); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 28px; width: 780px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto; position: relative;
+  }
+  .modal-title {
+    font-family: var(--font-display); font-size: 22px; letter-spacing: 0.06em;
+    color: var(--gold2); margin-bottom: 20px;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px; background: none;
+    border: none; color: var(--grey); font-size: 20px; cursor: pointer;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--white); }
+
+  /* ── CALC TABS ───────────────────────────────────────────── */
+  .calc-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .calc-tab {
+    padding: 6px 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04); color: var(--grey2);
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .calc-tab.active { background: var(--gold); color: var(--black); border-color: var(--gold); }
+  .calc-tab:hover:not(.active) { background: rgba(255,255,255,0.08); color: var(--white); }
+
+  /* ── CALC GRID ───────────────────────────────────────────── */
+  .calc-panel { display: none; }
+  .calc-panel.active { display: block; }
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .calc-field label {
+    display: block; font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.08em; color: var(--grey); margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+  .calc-field input {
+    width: 100%; background: var(--black3); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white); padding: 9px 12px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: 13px; outline: none; box-sizing: border-box;
+  }
+  .calc-field input:focus { border-color: var(--gold); }
+  .calc-results {
+    margin-top: 18px; background: var(--black3); border-radius: 6px;
+    padding: 16px; border: 1px solid rgba(255,255,255,0.06);
+  }
+  .calc-result-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .calc-result-row:last-child { border-bottom: none; }
+  .calc-result-label { font-family: var(--font-mono); font-size: 11px; color: var(--grey2); }
+  .calc-result-value { font-family: var(--font-mono); font-size: 14px; color: var(--gold2); font-weight: 600; }
+  .calc-result-value.highlight { color: var(--green); font-size: 18px; }
+  .calc-result-value.red { color: var(--red); }
+  .calc-btn {
+    margin-top: 16px; width: 100%; padding: 11px;
+    background: var(--gold); color: var(--black); border: none;
+    border-radius: 4px; font-family: var(--font-display); font-size: 16px;
+    letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s;
+  }
+  .calc-btn:hover { background: var(--gold2); }
+
+  /* ── IMPORT ZONE ─────────────────────────────────────────── */
+  .import-zone {
+    border: 2px dashed rgba(212,160,23,0.3); border-radius: 6px;
+    padding: 30px; text-align: center; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .import-zone:hover, .import-zone.drag { border-color: var(--gold); }
+  .import-zone p { color: var(--grey); font-size: 13px; margin: 8px 0 0; }
+  .import-status {
+    margin-top: 14px; font-family: var(--font-mono); font-size: 12px;
+    color: var(--grey2); min-height: 20px;
+  }
+  .import-status.ok  { color: var(--green); }
+  .import-status.err { color: var(--red); }
+
+  /* ── STACKED BADGE ───────────────────────────────────────── */
+  .stacked-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: rgba(255,196,0,0.15); border: 1px solid rgba(255,196,0,0.4);
+    color: #ffc400; border-radius: 2px; padding: 1px 5px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+  .source-badge {
+    display: inline-block; padding: 1px 5px; border-radius: 2px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
+    margin-right: 2px;
+  }
+  .src-rp  { background: rgba(26,108,255,0.15); color: var(--blue2); border: 1px solid rgba(26,108,255,0.3); }
+  .src-frcl { background: rgba(255,107,53,0.15); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3); }
+  .src-tax  { background: rgba(212,160,23,0.15); color: var(--gold2); border: 1px solid rgba(212,160,23,0.3); }
+
+  /* ── TOOLBAR BUTTONS ─────────────────────────────────────── */
+  .btn-tool {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04); color: var(--grey2);
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-tool:hover { background: rgba(255,255,255,0.08); color: var(--white); border-color: rgba(255,255,255,0.2); }
+  .btn-tool.gold { background: var(--gold); color: var(--black); border-color: var(--gold); }
+  .btn-tool.gold:hover { background: var(--gold2); }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">H</div>
+    <div>
+      <div class="logo-text">HARRIS INTEL</div>
+      <div class="logo-sub">Motivated Seller Intelligence</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="last-updated" id="lastUpdated">Loading...</div>
+    <button class="btn-export" onclick="exportGHL()">⬇ GHL CSV</button>
+  </div>
+</header>
+
+
+<!-- TOOLBAR -->
+<div style="display:flex; gap:8px; padding:10px 24px; background:var(--black2); border-bottom:1px solid rgba(255,255,255,0.06); flex-wrap:wrap;">
+  <button class="btn-tool gold" onclick="openCalc()">📐 Calculator</button>
+  <button class="btn-tool" onclick="openImport()">📂 Import Tax List</button>
+  <button class="btn-tool" onclick="exportSkipTrace()">⬇ Skip Trace CSV</button>
+  <button class="btn-tool" onclick="exportGHL()">⬇ GHL CSV</button>
+  <div style="margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--grey); display:flex; align-items:center; gap:8px;">
+    <span id="taxImportBadge" style="display:none; background:rgba(212,160,23,0.15); border:1px solid rgba(212,160,23,0.3); color:var(--gold2); padding:2px 8px; border-radius:2px; font-size:10px;"></span>
+    <span id="stackedBadge" style="display:none; background:rgba(255,196,0,0.12); border:1px solid rgba(255,196,0,0.3); color:#ffc400; padding:2px 8px; border-radius:2px; font-size:10px;"></span>
+  </div>
+</div>
+
+<!-- CALCULATOR MODAL -->
+<div class="modal-overlay" id="calcModal">
+  <div class="modal-box" style="width:820px">
+    <button class="modal-close" onclick="closeCalc()">✕</button>
+    <div class="modal-title">REI CALCULATOR</div>
+    <div class="calc-tabs">
+      <button class="calc-tab active" onclick="switchCalc('flip')">FIX & FLIP</button>
+      <button class="calc-tab" onclick="switchCalc('subto')">SUBJECT TO</button>
+      <button class="calc-tab" onclick="switchCalc('creative')">CREATIVE FIN.</button>
+      <button class="calc-tab" onclick="switchCalc('mortgage')">MORTGAGE</button>
+      <button class="calc-tab" onclick="switchCalc('coc')">CASH ON CASH</button>
+      <button class="calc-tab" onclick="switchCalc('caprate')">CAP RATE</button>
+    </div>
+
+    <!-- FIX & FLIP -->
+    <div class="calc-panel active" id="calc-flip">
+      <div class="calc-grid">
+        <div class="calc-field"><label>After Repair Value (ARV)</label><input type="number" id="ff-arv" placeholder="250000" oninput="calcFlip()"></div>
+        <div class="calc-field"><label>Repair Costs</label><input type="number" id="ff-repairs" placeholder="30000" oninput="calcFlip()"></div>
+        <div class="calc-field"><label>Closing Costs (buy+sell)</label><input type="number" id="ff-closing" placeholder="10000" oninput="calcFlip()"></div>
+        <div class="calc-field"><label>Holding Costs</label><input type="number" id="ff-holding" placeholder="5000" oninput="calcFlip()"></div>
+        <div class="calc-field"><label>Assignment Fee</label><input type="number" id="ff-assign" placeholder="10000" oninput="calcFlip()"></div>
+        <div class="calc-field"><label>ARV % (default 70%)</label><input type="number" id="ff-pct" placeholder="70" value="70" oninput="calcFlip()"></div>
+      </div>
+      <div class="calc-results" id="ff-results">
+        <div class="calc-result-row"><span class="calc-result-label">MAO (ARV × % − Repairs)</span><span class="calc-result-value highlight" id="ff-mao">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Net Profit to Rehabber</span><span class="calc-result-value" id="ff-profit">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">All-In Cost</span><span class="calc-result-value" id="ff-allin">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">ROI</span><span class="calc-result-value" id="ff-roi">—</span></div>
+      </div>
+    </div>
+
+    <!-- SUBJECT TO -->
+    <div class="calc-panel" id="calc-subto">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Purchase Price</label><input type="number" id="st-price" placeholder="200000" oninput="calcSubTo()"></div>
+        <div class="calc-field"><label>Existing Loan Balance</label><input type="number" id="st-balance" placeholder="150000" oninput="calcSubTo()"></div>
+        <div class="calc-field"><label>Existing Monthly Payment</label><input type="number" id="st-payment" placeholder="1200" oninput="calcSubTo()"></div>
+        <div class="calc-field"><label>Existing Rate (%)</label><input type="number" id="st-rate" placeholder="3.5" oninput="calcSubTo()"></div>
+        <div class="calc-field"><label>Market Rent</label><input type="number" id="st-rent" placeholder="1800" oninput="calcSubTo()"></div>
+        <div class="calc-field"><label>Monthly Expenses</label><input type="number" id="st-expenses" placeholder="300" oninput="calcSubTo()"></div>
+      </div>
+      <div class="calc-results">
+        <div class="calc-result-row"><span class="calc-result-label">Equity Pickup</span><span class="calc-result-value highlight" id="st-equity">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Monthly Cash Flow</span><span class="calc-result-value" id="st-cashflow">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Cash to Close</span><span class="calc-result-value" id="st-ctc">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Annual Cash Flow</span><span class="calc-result-value" id="st-annual">—</span></div>
+      </div>
+    </div>
+
+    <!-- CREATIVE FINANCE -->
+    <div class="calc-panel" id="calc-creative">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Purchase Price</label><input type="number" id="cf-price" placeholder="200000" oninput="calcCreative()"></div>
+        <div class="calc-field"><label>Down Payment</label><input type="number" id="cf-down" placeholder="10000" oninput="calcCreative()"></div>
+        <div class="calc-field"><label>Seller Finance Rate (%)</label><input type="number" id="cf-rate" placeholder="6" oninput="calcCreative()"></div>
+        <div class="calc-field"><label>Term (years)</label><input type="number" id="cf-term" placeholder="30" oninput="calcCreative()"></div>
+        <div class="calc-field"><label>Balloon Payment (years)</label><input type="number" id="cf-balloon" placeholder="5" oninput="calcCreative()"></div>
+        <div class="calc-field"><label>Market Rent</label><input type="number" id="cf-rent" placeholder="1800" oninput="calcCreative()"></div>
+      </div>
+      <div class="calc-results">
+        <div class="calc-result-row"><span class="calc-result-label">Monthly P&I Payment</span><span class="calc-result-value highlight" id="cf-payment">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Monthly Cash Flow</span><span class="calc-result-value" id="cf-cashflow">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Balloon Balance Due</span><span class="calc-result-value" id="cf-balloonbal">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Total Interest Paid</span><span class="calc-result-value" id="cf-interest">—</span></div>
+      </div>
+    </div>
+
+    <!-- MORTGAGE -->
+    <div class="calc-panel" id="calc-mortgage">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Purchase Price</label><input type="number" id="mo-price" placeholder="250000" oninput="calcMortgage()"></div>
+        <div class="calc-field"><label>Down Payment (%)</label><input type="number" id="mo-down" placeholder="20" oninput="calcMortgage()"></div>
+        <div class="calc-field"><label>Interest Rate (%)</label><input type="number" id="mo-rate" placeholder="7.25" oninput="calcMortgage()"></div>
+        <div class="calc-field"><label>Term (years)</label><input type="number" id="mo-term" placeholder="30" oninput="calcMortgage()"></div>
+        <div class="calc-field"><label>Monthly Income (gross)</label><input type="number" id="mo-income" placeholder="8000" oninput="calcMortgage()"></div>
+        <div class="calc-field"><label>Monthly Debts</label><input type="number" id="mo-debts" placeholder="500" oninput="calcMortgage()"></div>
+      </div>
+      <div class="calc-results">
+        <div class="calc-result-row"><span class="calc-result-label">Monthly Payment (P&I)</span><span class="calc-result-value highlight" id="mo-payment">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Down Payment Amount</span><span class="calc-result-value" id="mo-downamt">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Total Interest Over Life</span><span class="calc-result-value" id="mo-totalint">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Front-End DTI</span><span class="calc-result-value" id="mo-fedti">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Back-End DTI</span><span class="calc-result-value" id="mo-bedti">—</span></div>
+      </div>
+    </div>
+
+    <!-- CASH ON CASH -->
+    <div class="calc-panel" id="calc-coc">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Purchase Price</label><input type="number" id="coc-price" placeholder="200000" oninput="calcCoC()"></div>
+        <div class="calc-field"><label>Down Payment</label><input type="number" id="coc-down" placeholder="40000" oninput="calcCoC()"></div>
+        <div class="calc-field"><label>Monthly Rent</label><input type="number" id="coc-rent" placeholder="1800" oninput="calcCoC()"></div>
+        <div class="calc-field"><label>Monthly Mortgage P&I</label><input type="number" id="coc-mortgage" placeholder="1100" oninput="calcCoC()"></div>
+        <div class="calc-field"><label>Monthly Taxes + Insurance</label><input type="number" id="coc-ti" placeholder="250" oninput="calcCoC()"></div>
+        <div class="calc-field"><label>Monthly Repairs/CapEx</label><input type="number" id="coc-capex" placeholder="150" oninput="calcCoC()"></div>
+        <div class="calc-field"><label>Vacancy Rate (%)</label><input type="number" id="coc-vac" placeholder="8" oninput="calcCoC()"></div>
+        <div class="calc-field"><label>Closing Costs</label><input type="number" id="coc-closing" placeholder="5000" oninput="calcCoC()"></div>
+      </div>
+      <div class="calc-results">
+        <div class="calc-result-row"><span class="calc-result-label">Annual NOI</span><span class="calc-result-value" id="coc-noi">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Annual Cash Flow</span><span class="calc-result-value" id="coc-acf">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Cash-on-Cash Return</span><span class="calc-result-value highlight" id="coc-return">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Total Cash Invested</span><span class="calc-result-value" id="coc-invested">—</span></div>
+      </div>
+    </div>
+
+    <!-- CAP RATE -->
+    <div class="calc-panel" id="calc-caprate">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Property Value / Price</label><input type="number" id="cap-value" placeholder="200000" oninput="calcCapRate()"></div>
+        <div class="calc-field"><label>Monthly Gross Rent</label><input type="number" id="cap-rent" placeholder="1800" oninput="calcCapRate()"></div>
+        <div class="calc-field"><label>Vacancy Rate (%)</label><input type="number" id="cap-vac" placeholder="8" oninput="calcCapRate()"></div>
+        <div class="calc-field"><label>Monthly Operating Expenses</label><input type="number" id="cap-expenses" placeholder="400" oninput="calcCapRate()"></div>
+      </div>
+      <div class="calc-results">
+        <div class="calc-result-row"><span class="calc-result-label">Gross Annual Income</span><span class="calc-result-value" id="cap-gai">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Effective Gross Income</span><span class="calc-result-value" id="cap-egi">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Annual NOI</span><span class="calc-result-value" id="cap-noi">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">Cap Rate</span><span class="calc-result-value highlight" id="cap-rate">—</span></div>
+        <div class="calc-result-row"><span class="calc-result-label">GRM (Gross Rent Multiplier)</span><span class="calc-result-value" id="cap-grm">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box" style="width:500px">
+    <button class="modal-close" onclick="closeImport()">✕</button>
+    <div class="modal-title">IMPORT TAX DELINQUENT LIST</div>
+    <p style="color:var(--grey);font-size:13px;margin-bottom:20px">
+      Upload an Excel (.xlsx) file with columns: Owner First Name, Owner Last Name,
+      Property Address, Property City, Property Zip, Mailing Address, Amount Due.
+    </p>
+    <div class="import-zone" id="importZone" onclick="document.getElementById('importFile').click()">
+      <div style="font-size:32px">📂</div>
+      <div style="font-family:var(--font-display);font-size:18px;letter-spacing:0.06em;color:var(--gold2);margin-top:8px">DROP EXCEL FILE HERE</div>
+      <p>or click to browse — .xlsx files only</p>
+      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this.files[0])">
+    </div>
+    <div class="import-status" id="importStatus"></div>
+    <div id="importPreview" style="margin-top:14px;display:none">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--grey);margin-bottom:8px">PREVIEW (first 3 records):</div>
+      <div id="importPreviewTable" style="font-family:var(--font-mono);font-size:11px;color:var(--grey2);"></div>
+      <button class="calc-btn" style="margin-top:14px" onclick="mergeImportedRecords()">MERGE INTO DASHBOARD</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat-block">
+    <div class="stat-value" id="statTotal">—</div>
+    <div class="stat-label">Total Records</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-value" id="statHot">—</div>
+    <div class="stat-label">Hot Leads ≥70</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-value" id="statWarm">—</div>
+    <div class="stat-label">Warm Leads 50-69</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-value" id="statAddr">—</div>
+    <div class="stat-label">With Address</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-value" id="statDateRange">—</div>
+    <div class="stat-label">Date Range</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CATEGORY BREAKDOWN -->
+  <div class="breakdown" id="breakdown"></div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input class="search-input" type="text" id="searchInput"
+             placeholder="Search owner, address, doc number, legal..." />
+    </div>
+
+    <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+      <option value="score_desc">Score: High → Low</option>
+      <option value="score_asc">Score: Low → High</option>
+      <option value="date_desc">Filed: Newest First</option>
+      <option value="date_asc">Filed: Oldest First</option>
+      <option value="amount_desc">Amount: High → Low</option>
+    </select>
+
+    <button class="filter-btn active" onclick="setCatFilter('')" data-cat="">ALL</button>
+    <button class="filter-btn" onclick="setCatFilter('lp')"      data-cat="lp">LIS PENDENS</button>
+    <button class="filter-btn" onclick="setCatFilter('fc')"      data-cat="fc">FORECLOSURE</button>
+    <button class="filter-btn" onclick="setCatFilter('tax')"     data-cat="tax">TAX</button>
+    <button class="filter-btn" onclick="setCatFilter('jud')"     data-cat="jud">JUDGMENT</button>
+    <button class="filter-btn" onclick="setCatFilter('lien')"    data-cat="lien">LIEN</button>
+    <button class="filter-btn" onclick="setCatFilter('probate')" data-cat="probate">PROBATE</button>
+  </div>
+
+  <!-- SCORE FILTER -->
+  <div class="filter-bar" style="margin-top:-6px; margin-bottom: 14px;">
+    <button class="filter-btn active" onclick="setScoreFilter(0)" data-score="0">ALL SCORES</button>
+    <button class="filter-btn" onclick="setScoreFilter(70)" data-score="70">🔥 HOT (≥70)</button>
+    <button class="filter-btn" onclick="setScoreFilter(50)" data-score="50">⚡ WARM (≥50)</button>
+    <button class="filter-btn" onclick="setScoreFilter(30)" data-score="30">ACTIVE (≥30)</button>
+  </div>
+
+  <div class="lead-count" id="leadCount"></div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="setSort('score')">Score</th>
+          <th onclick="setSort('cat')">Type</th>
+          <th onclick="setSort('doc_type')">Doc</th>
+          <th onclick="setSort('filed')">Filed</th>
+          <th onclick="setSort('owner')">Owner / Grantor</th>
+          <th>Property Address</th>
+          <th>Mailing Address</th>
+          <th onclick="setSort('amount')">Amount</th>
+          <th>Flags</th>
+          <th>Legal Desc</th>
+          <th>Doc Link</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="pagination" id="pagination"></div>
+
+  <div class="gold-line"></div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    Harris County, TX · Public Records Intelligence<br/>
+    Data source: Harris County Clerk + HCAD Parcel Data
+  </div>
+  <div class="footer-right">
+    Built by <span class="footer-brand">DISPO LAB</span><br/>
+    <span id="footerFetch"></span>
+  </div>
+</footer>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let ALL_RECORDS = [];
+let filtered    = [];
+let catFilter   = '';
+let scoreFilter = 0;
+let sortKey     = 'score';
+let sortDir     = 'desc';
+let page        = 1;
+const PER_PAGE  = 50;
+
+// ── BOOT ──────────────────────────────────────────────────────
+(async function init() {
+  try {
+    const r  = await fetch('records.json?t=' + Date.now());
+    const d  = await r.json();
+    ALL_RECORDS = d.records || [];
+
+    // Stats bar
+    const hot  = ALL_RECORDS.filter(r => r.score >= 70).length;
+    const warm = ALL_RECORDS.filter(r => r.score >= 50 && r.score < 70).length;
+    const addr = ALL_RECORDS.filter(r => r.prop_address).length;
+
+    setText('statTotal',     d.total || ALL_RECORDS.length);
+    setText('statHot',       hot);
+    setText('statWarm',      warm);
+    setText('statAddr',      addr);
+
+    const from = (d.date_range?.from || '').replace(/-/g,'/');
+    const to   = (d.date_range?.to   || '').replace(/-/g,'/');
+    setText('statDateRange', from && to ? `${from}–${to}` : '—');
+
+    // Header
+    if (d.fetched_at) {
+      const dt = new Date(d.fetched_at);
+      setText('lastUpdated', 'Updated ' + dt.toLocaleDateString('en-US',
+        {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}));
+      setText('footerFetch', 'Last fetched: ' + dt.toLocaleString());
+    }
+
+    buildBreakdown();
+    applyFilters();
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('tableBody').innerHTML =
+      '<tr><td colspan="11" style="text-align:center;padding:60px;color:var(--grey)">No data loaded yet — run the scraper first.</td></tr>';
+    setText('lastUpdated', 'No data');
+  }
+})();
+
+// ── BREAKDOWN ─────────────────────────────────────────────────
+function buildBreakdown() {
+  const cats = {
+    lp:'Lis Pendens', fc:'Foreclosure', tax:'Tax', jud:'Judgment',
+    lien:'Lien', probate:'Probate', notice:'Notice'
+  };
+  const colors = {
+    lp:'var(--cat-lp)', fc:'var(--cat-fc)', tax:'var(--cat-tax)',
+    jud:'var(--cat-jud)', lien:'var(--cat-lien)',
+    probate:'var(--cat-probate)', notice:'var(--cat-notice)'
+  };
+
+  const counts = {};
+  ALL_RECORDS.forEach(r => { counts[r.cat] = (counts[r.cat]||0)+1; });
+
+  const el = document.getElementById('breakdown');
+  el.innerHTML = Object.entries(cats).map(([k,v]) => {
+    const c = counts[k] || 0;
+    if (!c) return '';
+    return `<div class="breakdown-item" onclick="setCatFilter('${k}')">
+      <div class="breakdown-dot" style="background:${colors[k]}"></div>
+      <span class="breakdown-label">${v}</span>
+      <span class="breakdown-count">${c}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── FILTERS ───────────────────────────────────────────────────
+function setCatFilter(cat) {
+  catFilter = cat;
+  document.querySelectorAll('[data-cat]').forEach(b =>
+    b.classList.toggle('active', b.dataset.cat === cat));
+  page = 1;
+  applyFilters();
+}
+
+function setScoreFilter(min) {
+  scoreFilter = min;
+  document.querySelectorAll('[data-score]').forEach(b =>
+    b.classList.toggle('active', Number(b.dataset.score) === min));
+  page = 1;
+  applyFilters();
+}
+
+function setSort(key) {
+  if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortKey = key; sortDir = 'desc'; }
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const sv = document.getElementById('sortSelect').value;
+
+  filtered = ALL_RECORDS.filter(r => {
+    if (catFilter   && r.cat   !== catFilter)     return false;
+    if (scoreFilter && r.score < scoreFilter)      return false;
+    if (q) {
+      const haystack = [r.owner, r.grantee, r.doc_num, r.legal,
+        r.prop_address, r.mail_address, r.doc_type, r.cat_label]
+        .join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  const [sk, sd] = sv.split('_');
+  filtered.sort((a,b) => {
+    let av = a[sk] ?? a.score ?? 0;
+    let bv = b[sk] ?? b.score ?? 0;
+    if (sk === 'amount') { av = a.amount||0; bv = b.amount||0; }
+    if (sk === 'date')   { av = a.filed||''; bv = b.filed||''; }
+    if (sk === 'score')  { av = a.score||0;  bv = b.score||0; }
+    if (av < bv) return sd === 'asc' ? -1 : 1;
+    if (av > bv) return sd === 'asc' ?  1 : -1;
+    return 0;
+  });
+
+  setText('leadCount', `Showing <span>${filtered.length}</span> of ${ALL_RECORDS.length} records`);
+  renderTable();
+  renderPagination();
+}
+
+// ── TABLE ─────────────────────────────────────────────────────
+function renderTable() {
+  const start = (page-1) * PER_PAGE;
+  const rows  = filtered.slice(start, start + PER_PAGE);
+  const tbody = document.getElementById('tableBody');
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="11">
+      <div class="empty-state">
+        <h3>NO LEADS FOUND</h3>
+        <p>Try adjusting your filters</p>
+      </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const delay = Math.min(i * 18, 400);
+    const score_class = r.score>=70 ? 'score-hot' : r.score>=50 ? 'score-warm'
+                      : r.score>=30 ? 'score-cool' : 'score-low';
+
+    const flags_html = (r.flags||[]).map(f =>
+      `<span class="flag-chip">${f}</span>`).join('');
+
+    const amount_str = r.amount
+      ? '$' + Number(r.amount).toLocaleString('en-US', {maximumFractionDigits:0})
+      : '—';
+
+    const prop_addr = r.prop_address
+      ? `<div class="addr-block">
+           <div class="addr-main">${esc(r.prop_address)}</div>
+           <div class="addr-sub">${esc(r.prop_city||'')}, ${esc(r.prop_state||'TX')} ${esc(r.prop_zip||'')}</div>
+         </div>`
+      : '<span style="color:var(--grey);font-size:11px;font-family:var(--font-mono)">—</span>';
+
+    const mail_addr = r.mail_address
+      ? `<div class="addr-block">
+           <div class="addr-main">${esc(r.mail_address)}</div>
+           <div class="addr-sub">${esc(r.mail_city||'')}, ${esc(r.mail_state||'TX')} ${esc(r.mail_zip||'')}</div>
+         </div>`
+      : '<span style="color:var(--grey);font-size:11px;font-family:var(--font-mono)">—</span>';
+
+    const legal_short = (r.legal||'').length > 40
+      ? r.legal.substring(0,40)+'…'
+      : (r.legal||'—');
+
+    const doc_link = `<div>
+      ${r.clerk_url ? `<a class="doc-link" href="${esc(r.clerk_url)}" target="_blank" rel="noopener">#${esc(r.doc_num||'VIEW')}</a>` : (r.doc_num ? `<span class="mono">${esc(r.doc_num)}</span>` : '—')}
+      </div>
+      ${r.hcad_url ? `<div><a class="doc-link" href="${esc(r.hcad_url)}" target="_blank" rel="noopener" style="color:var(--gold);font-size:10px">HCAD ↗</a></div>` : ''}`;
+
+    const conf_badge = r.match_confidence && r.match_confidence !== 'NONE'
+      ? `<span style="display:inline-block;margin-top:2px;font-size:9px;padding:1px 4px;border-radius:2px;font-family:var(--font-mono);
+          background:${r.match_confidence==='HIGH'?'rgba(33,160,107,0.2)':r.match_confidence==='MEDIUM'?'rgba(212,160,23,0.15)':'rgba(26,108,255,0.12)'};
+          color:${r.match_confidence==='HIGH'?'var(--green)':r.match_confidence==='MEDIUM'?'var(--gold2)':'var(--blue2)'}">
+          ${r.match_confidence}</span>` : '';
+
+    const contact_name = esc(r.contact||r.owner||'—');
+    const via_name = (r.contact && r.owner && r.contact !== r.owner)
+      ? `<div style="font-size:10px;color:var(--grey);font-family:var(--font-mono);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">via: ${esc(r.owner.substring(0,25))}${r.owner.length>25?'…':''}</div>` : '';
+
+    const clean_legal = (r.legal||'').replace(/^(Grantor|Grantee)\s*[:\s]\s*/i,'').substring(0,35) || '—';
+
+    return `<tr style="animation-delay:${delay}ms">
+      <td><span class="score-badge ${score_class}">${r.score||0}</span></td>
+      <td><span class="cat-pill cat-${r.cat||'notice'}">${esc(r.cat_label||r.cat||'')}</span></td>
+      <td class="mono">${esc(r.doc_type||'')}</td>
+      <td class="mono" style="white-space:nowrap">${esc(r.filed||'')}</td>
+      <td class="owner">
+        <div>${contact_name}</div>
+        ${via_name}
+        ${conf_badge}
+      </td>
+      <td class="col-addr">${prop_addr}</td>
+      <td class="col-addr">${mail_addr}</td>
+      <td class="amount-cell">${amount_str}</td>
+      <td class="col-flags"><div class="flags-wrap">${flags_html}</div></td>
+      <td class="col-legal mono" title="${esc(r.legal||'')}">${esc(clean_legal)}</td>
+      <td style="white-space:nowrap">${doc_link}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── PAGINATION ────────────────────────────────────────────────
+function renderPagination() {
+  const total = Math.ceil(filtered.length / PER_PAGE);
+  const el    = document.getElementById('pagination');
+  if (total <= 1) { el.innerHTML=''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+
+  for (let p2=1; p2<=total; p2++) {
+    if (total > 10 && p2 > 3 && p2 < total-2 && Math.abs(p2-page) > 1) {
+      if (p2===4 || p2===total-3) html += '<span class="page-info">…</span>';
+      continue;
+    }
+    html += `<button class="page-btn ${p2===page?'active':''}" onclick="goPage(${p2})">${p2}</button>`;
+  }
+
+  html += `<button class="page-btn" onclick="goPage(${page+1})" ${page===total?'disabled':''}>›</button>`;
+  html += `<span class="page-info">${(page-1)*PER_PAGE+1}–${Math.min(page*PER_PAGE,filtered.length)} of ${filtered.length}</span>`;
+
+  el.innerHTML = html;
+}
+
+function goPage(p2) {
+  const total = Math.ceil(filtered.length / PER_PAGE);
+  if (p2 < 1 || p2 > total) return;
+  page = p2;
+  renderTable();
+  renderPagination();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── CSV EXPORT ────────────────────────────────────────────────
+function exportCSV(type) {
+  type = type || 'skip';
+  const rows = filtered.length ? filtered : ALL_RECORDS;
+
+  let headers, getRow;
+
+  if (type === 'ghl') {
+    headers = [
+      'First Name','Last Name','Email','Phone',
+      'Property Address','Property City','Property State','Property Zip',
+      'Mailing Address','Mailing City','Mailing State','Mailing Zip',
+      'Tags','Lead Score','Amount Due','Doc Number','Filed Date',
+      'Sale Date','Source','Confidence'
+    ];
+    getRow = r => {
+      const parts = (r.contact||r.owner||'').split(' ');
+      const fn = r.first_name || parts[0] || '';
+      const ln = r.last_name || parts.slice(1).join(' ') || '';
+      const tags = [r.cat_label||r.cat, ...(r.flags||[]), ...(r.sources||[r.source||'RP'])].filter(Boolean).join('; ');
+      return [
+        fn, ln, '', '',
+        r.prop_address||'', r.prop_city||'', r.prop_state||'TX', r.prop_zip||'',
+        r.mail_address||'', r.mail_city||'', r.mail_state||'TX', r.mail_zip||'',
+        tags, r.score||'',
+        r.amount != null ? r.amount : '',
+        r.doc_num||'', r.filed||'', r.frcl_sale_date||'',
+        (r.sources||[r.source||'RP']).join('+'),
+        r.match_confidence||''
+      ];
+    };
+  } else {
+    // Skip Trace format
+    headers = [
+      'First Name','Last Name',
+      'Property Address','Property City','Property State','Property Zip',
+      'Mailing Address','Mailing City','Mailing State','Mailing Zip',
+      'Owner Name','Amount Due','Lead Type','Score','Flags','Sources',
+      'Doc Number','Filed Date','Sale Date','Confidence','Match Reason'
+    ];
+    getRow = r => {
+      const parts = (r.contact||r.owner||'').split(' ');
+      const fn = r.first_name || parts[0] || '';
+      const ln = r.last_name || parts.slice(1).join(' ') || '';
+      return [
+        fn, ln,
+        r.prop_address||'', r.prop_city||'', r.prop_state||'TX', r.prop_zip||'',
+        r.mail_address||'', r.mail_city||'', r.mail_state||'TX', r.mail_zip||'',
+        r.owner||'',
+        r.amount != null ? r.amount : '',
+        r.cat_label||r.cat||'',
+        r.score||'',
+        (r.flags||[]).join('; '),
+        (r.sources||[r.source||'RP']).join('+'),
+        r.doc_num||'', r.filed||'', r.frcl_sale_date||'',
+        r.match_confidence||'', r.match_reason||''
+      ];
+    };
+  }
+
+  const csvRows = [headers, ...rows.map(getRow)];
+  const csv = csvRows.map(row =>
+    row.map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(',')
+  ).join('\n');
+
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `harris-intel-${type}-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+function openCalc()   { document.getElementById('calcModal').classList.add('open'); }
+function closeCalc()  { document.getElementById('calcModal').classList.remove('open'); }
+function openImport() { document.getElementById('importModal').classList.add('open'); }
+function closeImport(){ document.getElementById('importModal').classList.remove('open'); }
+
+document.getElementById('calcModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('calcModal')) closeCalc();
+});
+document.getElementById('importModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('importModal')) closeImport();
+});
+
+// ── CALC TAB SWITCHING ─────────────────────────────────────────
+function switchCalc(name) {
+  document.querySelectorAll('.calc-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.calc-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('calc-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── CALCULATORS ────────────────────────────────────────────────
+const fmt = n => isNaN(n)||!isFinite(n) ? '—' : '$' + Math.round(n).toLocaleString();
+const pct = n => isNaN(n)||!isFinite(n) ? '—' : n.toFixed(1) + '%';
+const num = id => parseFloat(document.getElementById(id).value) || 0;
+
+function calcFlip() {
+  const arv=num('ff-arv'), repairs=num('ff-repairs'), closing=num('ff-closing'),
+        holding=num('ff-holding'), assign=num('ff-assign'), p=num('ff-pct')||70;
+  const mao     = arv * (p/100) - repairs;
+  const allin   = mao + repairs + closing + holding;
+  const profit  = arv - allin - assign;
+  const roi     = allin > 0 ? (profit/allin)*100 : 0;
+  document.getElementById('ff-mao').textContent    = fmt(mao);
+  document.getElementById('ff-profit').textContent = fmt(profit);
+  document.getElementById('ff-allin').textContent  = fmt(allin);
+  document.getElementById('ff-roi').textContent    = pct(roi);
+  document.getElementById('ff-profit').className   = 'calc-result-value' + (profit<0?' red':'');
+}
+
+function calcSubTo() {
+  const price=num('st-price'), bal=num('st-balance'), pmt=num('st-payment'),
+        rent=num('st-rent'), exp=num('st-expenses');
+  const equity   = price - bal;
+  const cashflow = rent - pmt - exp;
+  const ctc      = price - bal;
+  document.getElementById('st-equity').textContent    = fmt(equity);
+  document.getElementById('st-cashflow').textContent  = fmt(cashflow);
+  document.getElementById('st-ctc').textContent       = fmt(ctc);
+  document.getElementById('st-annual').textContent    = fmt(cashflow * 12);
+  document.getElementById('st-cashflow').className    = 'calc-result-value' + (cashflow<0?' red':'');
+}
+
+function piPayment(principal, annualRate, years) {
+  const r = annualRate / 100 / 12, n = years * 12;
+  if (r === 0) return principal / n;
+  return principal * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+}
+
+function loanBalance(principal, annualRate, years, afterYears) {
+  const r = annualRate / 100 / 12, n = years * 12, k = afterYears * 12;
+  if (r === 0) return principal - (principal/n)*k;
+  const pmt = principal * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+  return principal * Math.pow(1+r,k) - pmt * (Math.pow(1+r,k)-1)/r;
+}
+
+function calcCreative() {
+  const price=num('cf-price'), down=num('cf-down'), rate=num('cf-rate'),
+        term=num('cf-term')||30, balloon=num('cf-balloon')||5, rent=num('cf-rent');
+  const principal = price - down;
+  const pmt       = piPayment(principal, rate, term);
+  const cashflow  = rent - pmt;
+  const balloonBal= loanBalance(principal, rate, term, balloon);
+  const totalPaid = pmt * term * 12;
+  const totalInt  = totalPaid - principal;
+  document.getElementById('cf-payment').textContent    = fmt(pmt);
+  document.getElementById('cf-cashflow').textContent   = fmt(cashflow);
+  document.getElementById('cf-balloonbal').textContent = fmt(balloonBal);
+  document.getElementById('cf-interest').textContent   = fmt(totalInt);
+  document.getElementById('cf-cashflow').className     = 'calc-result-value' + (cashflow<0?' red':'');
+}
+
+function calcMortgage() {
+  const price=num('mo-price'), downPct=num('mo-down')||20, rate=num('mo-rate'),
+        term=num('mo-term')||30, income=num('mo-income'), debts=num('mo-debts');
+  const downAmt  = price * (downPct/100);
+  const loan     = price - downAmt;
+  const pmt      = piPayment(loan, rate, term);
+  const totalInt = pmt * term * 12 - loan;
+  const fedti    = income > 0 ? (pmt/income)*100 : 0;
+  const bedti    = income > 0 ? ((pmt+debts)/income)*100 : 0;
+  document.getElementById('mo-payment').textContent  = fmt(pmt);
+  document.getElementById('mo-downamt').textContent  = fmt(downAmt);
+  document.getElementById('mo-totalint').textContent = fmt(totalInt);
+  document.getElementById('mo-fedti').textContent    = pct(fedti);
+  document.getElementById('mo-bedti').textContent    = pct(bedti);
+  const dtiEl = document.getElementById('mo-bedti');
+  dtiEl.className = 'calc-result-value' + (bedti > 43 ? ' red' : '');
+}
+
+function calcCoC() {
+  const rent=num('coc-rent'), mortgage=num('coc-mortgage'), ti=num('coc-ti'),
+        capex=num('coc-capex'), vac=num('coc-vac')||8, down=num('coc-down'),
+        closing=num('coc-closing');
+  const effRent  = rent * (1 - vac/100);
+  const monthlyExp = mortgage + ti + capex;
+  const monthlyNOI = effRent - ti - capex;
+  const annualNOI  = monthlyNOI * 12;
+  const annualCF   = (effRent - monthlyExp) * 12;
+  const invested   = down + closing;
+  const cocReturn  = invested > 0 ? (annualCF/invested)*100 : 0;
+  document.getElementById('coc-noi').textContent      = fmt(annualNOI);
+  document.getElementById('coc-acf').textContent      = fmt(annualCF);
+  document.getElementById('coc-return').textContent   = pct(cocReturn);
+  document.getElementById('coc-invested').textContent = fmt(invested);
+  document.getElementById('coc-acf').className        = 'calc-result-value' + (annualCF<0?' red':'');
+}
+
+function calcCapRate() {
+  const value=num('cap-value'), rent=num('cap-rent'),
+        vac=num('cap-vac')||8, expenses=num('cap-expenses');
+  const gai    = rent * 12;
+  const egi    = gai * (1 - vac/100);
+  const noi    = egi - (expenses * 12);
+  const capRt  = value > 0 ? (noi/value)*100 : 0;
+  const grm    = rent > 0 ? value / (rent*12) : 0;
+  document.getElementById('cap-gai').textContent  = fmt(gai);
+  document.getElementById('cap-egi').textContent  = fmt(egi);
+  document.getElementById('cap-noi').textContent  = fmt(noi);
+  document.getElementById('cap-rate').textContent = pct(capRt);
+  document.getElementById('cap-grm').textContent  = isNaN(grm)||!isFinite(grm)?'—':grm.toFixed(1)+'x';
+}
+
+// ── IMPORT XLSX ────────────────────────────────────────────────
+const importZone = document.getElementById('importZone');
+importZone.addEventListener('dragover', e => { e.preventDefault(); importZone.classList.add('drag'); });
+importZone.addEventListener('dragleave', () => importZone.classList.remove('drag'));
+importZone.addEventListener('drop', e => {
+  e.preventDefault(); importZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleImportFile(f);
+});
+
+function handleImportFile(file) {
+  if (!file) return;
+  const status = document.getElementById('importStatus');
+  status.textContent = 'Reading file...';
+  status.className = 'import-status';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      // Use SheetJS (XLSX) loaded from CDN
+      if (typeof XLSX === 'undefined') {
+        status.textContent = 'Loading SheetJS...';
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        script.onload = () => parseXLSX(e.target.result, file.name);
+        document.head.appendChild(script);
+      } else {
+        parseXLSX(e.target.result, file.name);
+      }
+    } catch(err) {
+      status.textContent = 'Error: ' + err.message;
+      status.className = 'import-status err';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseXLSX(buffer, filename) {
+  const status = document.getElementById('importStatus');
+  try {
+    const wb   = XLSX.read(buffer, {type:'array'});
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, {raw:false, defval:''});
+
+    if (!data.length) {
+      status.textContent = 'No data found in file.';
+      status.className = 'import-status err';
+      return;
+    }
+
+    // Map columns flexibly
+    const COL = {
+      first:    ['Owner First Name','FirstName','First Name','first_name','FIRST'],
+      last:     ['Owner Last Name','LastName','Last Name','last_name','LAST'],
+      owner:    ['Owner Name','Owner','NAME'],
+      propAddr: ['Property Address','Prop Address','PROP_ADDR','Address'],
+      propCity: ['Property City','Prop City','CITY'],
+      propState:['Property State','Prop State','STATE'],
+      propZip:  ['Property Zip','Prop Zip','ZIP'],
+      mailAddr: ['Mailing Address','Mail Address','MAIL_ADDR'],
+      mailCity: ['Mailing City','Mail City'],
+      mailState:['Mailing State','Mail State'],
+      mailZip:  ['Mailing Zip','Mail Zip'],
+      amount:   ['Amount Due','Amount','AMOUNT','Tax Due','Balance'],
+    };
+
+    function getCol(row, keys) {
+      for (const k of keys) {
+        if (row[k] !== undefined && row[k] !== '') return String(row[k]).trim();
+      }
+      return '';
+    }
+
+    TAX_RECORDS = data.map((row, i) => {
+      const propAddr = getCol(row, COL.propAddr);
+      const amount   = parseFloat(getCol(row, COL.amount).replace(/[$,]/g,'')) || 0;
+      return {
+        doc_num:     'TAX-IMPORT-' + i,
+        doc_type:    'TAX-DELINQUENT',
+        filed:       '',
+        cat:         'tax',
+        cat_label:   'Tax Delinquent',
+        first_name:  getCol(row, COL.first),
+        last_name:   getCol(row, COL.last),
+        owner:       getCol(row, COL.owner) || (getCol(row,COL.first)+' '+getCol(row,COL.last)).trim(),
+        contact:     getCol(row, COL.owner) || (getCol(row,COL.first)+' '+getCol(row,COL.last)).trim(),
+        grantee:     '',
+        amount:      amount,
+        legal:       '',
+        prop_address:  propAddr,
+        prop_city:     getCol(row, COL.propCity) || 'HOUSTON',
+        prop_state:    getCol(row, COL.propState) || 'TX',
+        prop_zip:      getCol(row, COL.propZip),
+        mail_address:  getCol(row, COL.mailAddr) || propAddr,
+        mail_city:     getCol(row, COL.mailCity)  || 'HOUSTON',
+        mail_state:    getCol(row, COL.mailState) || 'TX',
+        mail_zip:      getCol(row, COL.mailZip),
+        match_confidence: 'HIGH',
+        match_reason: 'Tax import',
+        flags:        ['Tax delinquent'],
+        score:        amount > 10000 ? 80 : 70,
+        source:       'TAX_IMPORT',
+        hcad_url:     '',
+        clerk_url:    '',
+        prop_addr_norm: normalizeAddr(propAddr)
+      };
+    }).filter(r => r.prop_address);
+
+    // Preview
+    const prev = document.getElementById('importPreviewTable');
+    prev.innerHTML = TAX_RECORDS.slice(0,3).map(r =>
+      `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+        ${r.first_name} ${r.last_name} | ${r.prop_address}, ${r.prop_zip} | $${r.amount.toLocaleString()}
+      </div>`
+    ).join('');
+    document.getElementById('importPreview').style.display = 'block';
+
+    status.textContent = `✓ Parsed ${TAX_RECORDS.length.toLocaleString()} records from ${filename}`;
+    status.className = 'import-status ok';
+
+  } catch(err) {
+    status.textContent = 'Parse error: ' + err.message;
+    status.className = 'import-status err';
+    console.error(err);
+  }
+}
+
+function normalizeAddr(addr) {
+  if (!addr) return '';
+  return addr.toUpperCase().trim()
+    .replace(/\bST\b/g,'ST').replace(/\bAVE\b/g,'AVE')
+    .replace(/\s+/g,' ').replace(/[.,]/g,'');
+}
+
+// ── RECORD STACKING ────────────────────────────────────────────
+function mergeImportedRecords() {
+  if (!TAX_RECORDS.length) return;
+
+  // Build address index from existing records
+  const addrIndex = {};
+  ALL_RECORDS.forEach((r, i) => {
+    const key = normalizeAddr(r.prop_address);
+    if (key) {
+      if (!addrIndex[key]) addrIndex[key] = [];
+      addrIndex[key].push(i);
+    }
+  });
+
+  let stackedCount = 0;
+  let addedCount = 0;
+
+  TAX_RECORDS.forEach(taxRec => {
+    const key = taxRec.prop_addr_norm;
+    if (key && addrIndex[key]) {
+      // STACK — merge into existing record(s)
+      addrIndex[key].forEach(idx => {
+        const existing = ALL_RECORDS[idx];
+        // Add TAX source
+        if (!existing.sources) existing.sources = ['RP'];
+        if (!existing.sources.includes('TAX')) {
+          existing.sources.push('TAX');
+          existing.flags = [...(existing.flags||[]), 'Tax delinquent', 'STACKED'];
+          existing.score = Math.min(100, (existing.score||0) + 30);
+          if (!existing.amount && taxRec.amount) existing.amount = taxRec.amount;
+          existing.stacked = true;
+          stackedCount++;
+        }
+      });
+    } else {
+      // ADD as new record
+      if (!taxRec.sources) taxRec.sources = ['TAX'];
+      ALL_RECORDS.push(taxRec);
+      addedCount++;
+    }
+  });
+
+  MERGED = true;
+
+  // Update stats
+  const taxBadge = document.getElementById('taxImportBadge');
+  taxBadge.textContent = `TAX: ${TAX_RECORDS.length.toLocaleString()} imported`;
+  taxBadge.style.display = 'inline';
+
+  const stackBadge = document.getElementById('stackedBadge');
+  stackBadge.textContent = `${stackedCount} STACKED`;
+  stackBadge.style.display = stackedCount > 0 ? 'inline' : 'none';
+
+  setText('statTotal', ALL_RECORDS.length);
+  buildBreakdown();
+  applyFilters();
+  closeImport();
+
+  alert(`✓ Merged ${TAX_RECORDS.length.toLocaleString()} tax records\n• ${stackedCount} stacked with existing leads (score +30)\n• ${addedCount} added as new records`);
+}
+
+// ── SOURCE BADGES helper ───────────────────────────────────────
+function sourceBadges(r) {
+  const sources = r.sources || [(r.source === 'TAX_IMPORT' ? 'TAX' : 'RP')];
+  const frcl = r.cat === 'fc' && r.source === 'FRCL' ? ['FRCL'] : [];
+  const all = [...new Set([...sources, ...frcl])];
+  return all.map(s => `<span class="source-badge src-${s.toLowerCase()}">${s}</span>`).join('');
+}
+
+// ── SKIP TRACE CSV ─────────────────────────────────────────────
+function exportSkipTrace() {
+  const cols = [
+    'First Name','Last Name',
+    'Property Address','Property City','Property State','Property Zip',
+    'Mailing Address','Mailing City','Mailing State','Mailing Zip',
+    'Lead Type','Score','Amount Due','Sources','Stacked',
+    'Doc Number','Sale Date','Filed Date','Match Confidence','Flags',
+    'Doc Link','HCAD Link'
+  ];
+
+  const rows = [cols];
+  filtered.forEach(r => {
+    const contact = r.contact || r.owner || '';
+    const parts   = contact.includes(' ')
+      ? [r.first_name || contact.split(' ')[0], r.last_name || contact.split(' ').slice(1).join(' ')]
+      : [r.first_name || contact, r.last_name || ''];
+
+    rows.push([
+      parts[0], parts[1],
+      r.prop_address||'', r.prop_city||'', r.prop_state||'TX', r.prop_zip||'',
+      r.mail_address||'', r.mail_city||'', r.mail_state||'TX', r.mail_zip||'',
+      r.cat_label||r.cat||'',
+      r.score||0,
+      r.amount ? Number(r.amount).toFixed(2) : '',
+      (r.sources||[(r.source==='TAX_IMPORT'?'TAX':'RP')]).join('+'),
+      r.stacked ? 'YES' : 'NO',
+      r.doc_num||'', r.frcl_sale_date||'', r.filed||'',
+      r.match_confidence||'',
+      (r.flags||[]).join('; '),
+      r.clerk_url||'', r.hcad_url||''
+    ]);
+  });
+
+  downloadCSV(rows, `harris_skip_trace_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportGHL() {
+  const cols = [
+    'First Name','Last Name',
+    'Email','Phone',
+    'Property Address','Property City','Property State','Property Zip',
+    'Mailing Address','Mailing City','Mailing State','Mailing Zip',
+    'Lead Type','Score','Amount Due','Sources','Stacked',
+    'Doc Number','Filed Date','Foreclosure Sale Date',
+    'Motivated Seller Flags','Match Confidence',
+    'Public Records URL','HCAD URL'
+  ];
+
+  const rows = [cols];
+  filtered.forEach(r => {
+    const contact = r.contact || r.owner || '';
+    const first = r.first_name || contact.split(' ')[0] || '';
+    const last  = r.last_name  || contact.split(' ').slice(1).join(' ') || '';
+
+    rows.push([
+      first, last, '', '',
+      r.prop_address||'', r.prop_city||'', r.prop_state||'TX', r.prop_zip||'',
+      r.mail_address||'', r.mail_city||'', r.mail_state||'TX', r.mail_zip||'',
+      r.cat_label||'', r.score||0,
+      r.amount ? Number(r.amount).toFixed(2) : '',
+      (r.sources||[(r.source==='TAX_IMPORT'?'TAX':'RP')]).join('+'),
+      r.stacked ? 'YES' : 'NO',
+      r.doc_num||'', r.filed||'', r.frcl_sale_date||'',
+      (r.flags||[]).join('; '),
+      r.match_confidence||'',
+      r.clerk_url||'', r.hcad_url||''
+    ]);
+  });
+
+  downloadCSV(rows, `harris_ghl_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function downloadCSV(rows, filename) {
+  const csv  = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── UTILS ──────────────────────────────────────────────────────
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = val;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── SEARCH DEBOUNCE ───────────────────────────────────────────
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { page=1; applyFilters(); }, 250);
+});
+</script>
+</body>
+</html>
